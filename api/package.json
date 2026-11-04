@@ -1,0 +1,26 @@
+{
+  "name": "@tokenledger/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "start": "node dist/main.js",
+    "build": "tsc -p tsconfig.json",
+    "test": "node --import tsx --test test/*.test.ts",
+    "test:db": "node --import tsx test/database.integration.ts"
+  },
+  "dependencies": {
+    "@fastify/cors": "^11.4.0",
+    "@fastify/rate-limit": "^11.2.2",
+    "@supabase/supabase-js": "^2.119.0",
+    "fastify": "^5.12.8",
+    "firebase-admin": "^14.5.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}

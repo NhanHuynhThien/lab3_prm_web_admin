@@ -1,0 +1,15 @@
+node_modules/
+**/node_modules/
+.env
+**/.env
+.env.*
+**/.env.*
+api/credentials/
+api/dist/
+admin/dist/
+admin/.next/
+admin/out/
+*.tsbuildinfo
+*.log
+.DS_Store
+data.local/

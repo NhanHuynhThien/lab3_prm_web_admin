@@ -1,0 +1,29 @@
+{
+  "name": "tokenledger-platform",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "workspaces": [
+    "api",
+    "admin"
+  ],
+  "scripts": {
+    "check": "node scripts/check-config.mjs",
+    "verify:services": "node scripts/verify-services.mjs",
+    "dev": "npm run dev:api & npm run dev:admin & wait",
+    "dev:api": "npm run dev --workspace @tokenledger/api",
+    "dev:admin": "npm run dev --workspace @tokenledger/admin",
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspace @tokenledger/api",
+    "format:check": "prettier --check \"api/{src,test}/**/*.ts\" \"admin/src/**/*.{ts,tsx,css}\""
+  },
+  "overrides": {
+    "@grpc/grpc-js": "^1.13.6"
+  },
+  "devDependencies": {
+    "prettier": "^3.9.10"
+  }
+}
