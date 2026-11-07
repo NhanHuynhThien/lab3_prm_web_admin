@@ -2,7 +2,9 @@
 
 ## Mục tiêu và phạm vi
 
-TokenLedger hỗ trợ người dùng theo dõi token và chi phí AI cá nhân. Web admin vận hành danh mục model, bảng giá, thông báo và tình trạng dịch vụ. Backend cung cấp API cho web và mobile.
+TokenLedger hỗ trợ người dùng theo dõi token và chi phí AI cá nhân. Web admin theo dõi tình trạng dịch vụ, thiết bị, nhật ký và Crashlytics. Backend cung cấp API cho web và mobile.
+
+Web admin không còn trang Model & bảng giá và Thông báo. API model, giá và thông báo vẫn giữ nguyên ở backend để mobile không đổi luồng; hai mục bên dưới mô tả hành vi API, không phải màn hình web.
 
 PDF chỉ nằm trong phạm vi xử lý local trên mobile; không triển khai upload cloud. Đây là thay đổi phạm vi theo yêu cầu người dùng, chưa phải xác nhận miễn yêu cầu upload của đề bài. Remote Config, Analytics và bằng chứng Android thật cần nghiệm thu ở repo mobile.
 
@@ -50,7 +52,7 @@ FCM accepted chưa chứng minh đã hiển thị hoặc đã đọc. Mobile c�
 
 ## Tổng quan, hệ thống và Crashlytics
 
-Tổng quan lấy số model/giá/thiết bị/job và audit từ database. Màn hệ thống biểu diễn cấu hình; `configured` không đảm bảo kết nối đã được xác minh.
+Tổng quan hiển thị số thiết bị, số dịch vụ đã cấu hình và audit từ database. Màn hệ thống biểu diễn cấu hình; `configured` không đảm bảo kết nối đã được xác minh.
 
 Code hiện có màn Crashlytics và backend reader gọi Reports API `v1alpha`. Reader chọn kỳ 7 hoặc 30 ngày, cache 60 giây và chỉ lấy 25 nhóm đầu. Khi còn trang sau, các tổng trên UI chỉ áp dụng dữ liệu đã tải.
 

@@ -29,6 +29,3 @@ export async function api<T>(
   if (!res.ok) throw new Error(data.error || "Chưa hoàn tất yêu cầu.");
   return data;
 }
-export function sendJson<T>(path: string, body: unknown) {
-  return api<T>(path, { method: "POST", body: JSON.stringify(body) });
-}

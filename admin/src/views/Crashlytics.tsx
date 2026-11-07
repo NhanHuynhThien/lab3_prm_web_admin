@@ -79,21 +79,22 @@ export function Crashlytics() {
   return (
     <>
       <PageHeading
-        eyebrow="WORKSPACE / CRASHLYTICS"
-        title="Sự cố, có bằng chứng."
-        description="Báo cáo chỉ đọc từ Firebase Crashlytics. Số liệu thiếu được giữ là chưa biết."
+        title="Báo cáo Crashlytics"
+        description="Chỉ đọc từ Firebase. Số liệu thiếu được hiển thị là chưa biết."
         action={<Refresh onClick={state.refresh} busy={state.loading} />}
       />
       <div className="page-toolbar">
         <div className="tabs">
           <Button
             className={days === "7" ? "active" : ""}
+            aria-pressed={days === "7"}
             onClick={() => setDays("7")}
           >
             7 ngày
           </Button>
           <Button
             className={days === "30" ? "active" : ""}
+            aria-pressed={days === "30"}
             onClick={() => setDays("30")}
           >
             30 ngày
@@ -132,25 +133,16 @@ export function Crashlytics() {
       ) : (
         data && (
           <>
-            <div className="notice">
-              <ShieldCheck size={24} />
-              <p>
-                {data.source} ·{" "}
-                {data.start ? `${time(data.start)} → ${time(data.end!)}` : ""}.
-                Đọc lúc {time(data.checkedAt)}; cache tối đa60giây. Số user ảnh
-                hưởng được hiển thị theo từng nhóm, không cộng trùng giữa issue.
-              </p>
-            </div>
             <div className="stats-grid">
               <article className="stat">
                 <span>Nhóm trên trang</span>
                 <strong>{rows.length}</strong>
-                <small>Tối đa25 nhóm mỗi lượt</small>
+                <small>Tối đa 25 nhóm mỗi lượt</small>
               </article>
               <article className="stat">
                 <span>Nhóm toàn báo cáo</span>
                 <strong>{value(data.totalGroups)}</strong>
-                <small>totalSize do Firebase cung cấp</small>
+                <small>Tổng do Firebase cung cấp</small>
               </article>
               <article className="stat">
                 <span>Sự kiện trên trang</span>
@@ -159,8 +151,8 @@ export function Crashlytics() {
               </article>
               <article className="stat">
                 <span>Nguồn báo cáo</span>
-                <strong style={{ fontSize: 22 }}>Firebase</strong>
-                <small>Observed · không extrapolate</small>
+                <strong className="stat-text">Firebase</strong>
+                <small>Số liệu quan sát, không ngoại suy</small>
               </article>
             </div>
             <Section
@@ -169,7 +161,7 @@ export function Crashlytics() {
               action={<Badge tone="green">Chỉ đọc</Badge>}
             >
               {!!data.reports.length && (
-                <label style={{ marginBottom: 20 }}>
+                <label className="field-gap">
                   Loại báo cáo
                   <NativeSelect
                     value={data.selected ?? ""}
@@ -189,7 +181,7 @@ export function Crashlytics() {
                   detail="Sau khi test crash/handled trên mobile, mở lại app và chờ Firebase xử lý rồi làm mới. Không suy 100% crash-free khi chưa có mẫu."
                 />
               ) : (
-                <Table>
+                <Table className="stack-table">
                   <TableHeader>
                     <TableRow>
                       <TableHead>Nhóm / loại</TableHead>
@@ -202,14 +194,20 @@ export function Crashlytics() {
                   <TableBody>
                     {rows.map((r) => (
                       <TableRow key={r.id}>
-                        <TableCell>
+                        <TableCell className="cell-title">
                           <strong>{r.title}</strong>
                           <small>{kinds[r.type] ?? r.type}</small>
                         </TableCell>
-                        <TableCell>{value(r.events)}</TableCell>
-                        <TableCell>{value(r.users)}</TableCell>
-                        <TableCell>{value(r.sessions)}</TableCell>
-                        <TableCell>
+                        <TableCell data-label="Sự kiện">
+                          {value(r.events)}
+                        </TableCell>
+                        <TableCell data-label="User ảnh hưởng">
+                          {value(r.users)}
+                        </TableCell>
+                        <TableCell data-label="Phiên ảnh hưởng">
+                          {value(r.sessions)}
+                        </TableCell>
+                        <TableCell data-label="Gần nhất">
                           {r.lastSeen ? time(r.lastSeen) : "—"}
                         </TableCell>
                       </TableRow>
@@ -221,13 +219,23 @@ export function Crashlytics() {
                 <div className="notice">
                   <WarningCircle size={24} />
                   <p>
-                    Còn nhóm ở các trang sau. Màn này hiển thị25 nhóm đầu; mở
+                    Còn nhóm ở các trang sau. Màn này hiển thị 25 nhóm đầu; mở
                     Firebase Console để xem toàn bộ. Các tổng trên chỉ áp dụng
                     trang đang tải.
                   </p>
                 </div>
               )}
             </Section>
+            <div className="notice">
+              <ShieldCheck size={24} />
+              <p>
+                {data.source} ·{" "}
+                {data.start ? `${time(data.start)} → ${time(data.end!)}` : ""}.
+                Đọc lúc {time(data.checkedAt)}; cache tối đa 60 giây. Số user
+                ảnh hưởng được hiển thị theo từng nhóm, không cộng trùng giữa
+                issue.
+              </p>
+            </div>
           </>
         )
       )}
