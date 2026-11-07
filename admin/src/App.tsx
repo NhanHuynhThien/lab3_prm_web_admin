@@ -1,17 +1,12 @@
 "use client";
 import { Button } from "@/components/ui/button";
-import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import {
   SquaresFour,
-  Cube,
-  BellSimple,
   SlidersHorizontal,
   SignOut,
   ArrowSquareOut,
-  List,
-  X,
   ShieldCheck,
   Bug,
 } from "@phosphor-icons/react";
@@ -24,18 +19,12 @@ import type { Section } from "./sections";
 const Overview = dynamic(() =>
   import("./views/Overview").then((m) => m.Overview),
 );
-const Catalog = dynamic(() => import("./views/Catalog").then((m) => m.Catalog));
-const Notifications = dynamic(() =>
-  import("./views/Notifications").then((m) => m.Notifications),
-);
 const System = dynamic(() => import("./views/System").then((m) => m.System));
 const Crashlytics = dynamic(() =>
   import("./views/Crashlytics").then((m) => m.Crashlytics),
 );
-const nav: { id: Section; name: string; icon: typeof Cube }[] = [
+const nav: { id: Section; name: string; icon: typeof Bug }[] = [
   { id: "overview", name: "Tổng quan", icon: SquaresFour },
-  { id: "catalog", name: "Model & bảng giá", icon: Cube },
-  { id: "notifications", name: "Thông báo", icon: BellSimple },
   { id: "crashlytics", name: "Crashlytics", icon: Bug },
   { id: "system", name: "Hệ thống", icon: SlidersHorizontal },
 ];
@@ -45,38 +34,33 @@ export default function App() {
     router = useRouter();
   const value = pathname.split("/")[1];
   const page = nav.some((n) => n.id === value) ? value : "overview";
-  const [menu, setMenu] = useState(false);
-  useEffect(() => {
-    setMenu(false);
-  }, [pathname]);
   function navigate(id: string) {
     router.push(id === "overview" ? "/" : `/${id}`);
   }
   if (loading || !user || !session?.admin) return <Login />;
+  const items = nav.map((n) => (
+    <Button
+      className={page === n.id ? "nav-item active" : "nav-item"}
+      key={n.id}
+      onClick={() => navigate(n.id)}
+      aria-current={page === n.id ? "page" : undefined}
+    >
+      <n.icon size={22} weight={page === n.id ? "fill" : "regular"} />
+      {n.name}
+    </Button>
+  ));
   return (
     <div className="workspace">
       <a href="#main-content" className="skip-link">
         Đến nội dung chính
       </a>
-      <aside className={`sidebar ${menu ? "open" : ""}`}>
+      <aside className="sidebar">
         <Brand />
         <div className="workspace-label">
           <span className="status-dot" />
           ADMIN · CHỈ DỮ LIỆU VẬN HÀNH
         </div>
-        <nav aria-label="Điều hướng quản trị">
-          {nav.map((n) => (
-            <Button
-              className={page === n.id ? "nav-item active" : "nav-item"}
-              key={n.id}
-              onClick={() => navigate(n.id)}
-              aria-current={page === n.id ? "page" : undefined}
-            >
-              <n.icon size={22} />
-              {n.name}
-            </Button>
-          ))}
-        </nav>
+        <nav aria-label="Điều hướng quản trị">{items}</nav>
         <div className="sidebar-note">
           <ShieldCheck size={24} />
           <strong>Web dành cho admin</strong>
@@ -92,28 +76,16 @@ export default function App() {
           <ArrowSquareOut size={18} />
         </a>
       </aside>
-      {menu && (
-        <Button
-          className="menu-overlay"
-          aria-label="Đóng menu"
-          onClick={() => setMenu(false)}
-        />
-      )}
       <div className="workspace-body">
         <header className="topbar">
-          <Button
-            className="icon-button mobile-menu"
-            aria-label={menu ? "Đóng menu" : "Mở menu"}
-            onClick={() => setMenu(!menu)}
-          >
-            {menu ? <X size={24} /> : <List size={24} />}
-          </Button>
+          <img className="topbar-logo" src="/tokenledger.svg" alt="" />
           <div className="breadcrumb">
-            Không gian quản trị <span>/</span>
+            <span className="breadcrumb-root">Không gian quản trị</span>
+            <span className="breadcrumb-divider">/</span>
             <strong>{nav.find((n) => n.id === page)?.name}</strong>
           </div>
           <div className="user-menu">
-            <div className="avatar">
+            <div className="avatar" aria-hidden="true">
               {(user.displayName || user.email || "A").charAt(0)}
             </div>
             <div className="user-info">
@@ -136,10 +108,6 @@ export default function App() {
         >
           {page === "overview" ? (
             <Overview navigate={navigate} />
-          ) : page === "catalog" ? (
-            <Catalog />
-          ) : page === "notifications" ? (
-            <Notifications />
           ) : page === "crashlytics" ? (
             <Crashlytics />
           ) : (
@@ -151,6 +119,9 @@ export default function App() {
           </footer>
         </main>
       </div>
+      <nav className="bottom-nav" aria-label="Điều hướng chính">
+        {items}
+      </nav>
     </div>
   );
 }

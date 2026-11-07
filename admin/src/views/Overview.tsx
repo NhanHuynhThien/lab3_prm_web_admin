@@ -1,11 +1,12 @@
 import {
-  BellSimple,
+  Bug,
   ChartLineUp,
-  Cube,
-  DeviceMobile,
-  ArrowUpRight,
   CheckCircle,
+  ClipboardText,
   Clock,
+  DeviceMobile,
+  PlugsConnected,
+  WarningCircle,
 } from "@phosphor-icons/react";
 import type { Status, Audit } from "../types";
 import { time } from "../types";
@@ -20,16 +21,31 @@ import {
   Refresh,
   InlineLink,
 } from "../components/ui";
+const services = [
+  ["Firebase", "firebase"],
+  ["Firebase Cloud Messaging", "fcm"],
+  ["Gemini API", "gemini"],
+  ["Crashlytics", "crashlytics"],
+];
+const auditNames: Record<string, string> = {
+  "model.create": "Thêm model",
+  "model.update": "Cập nhật model",
+  "price.create": "Tạo phiên bản giá",
+  "notification.claim": "Bắt đầu gửi thông báo",
+  "notification.complete": "Hoàn tất lượt gửi",
+};
 export function Overview({ navigate }: { navigate: (p: string) => void }) {
   const state = useResource<Status>("/v1/admin/status");
   const audit = useResource<{ events: Audit[] }>("/v1/admin/audit");
   const s = state.data;
+  const configured = s
+    ? services.filter(([, key]) => s.services[key]?.configured).length
+    : 0;
   return (
     <>
       <PageHeading
-        eyebrow="WORKSPACE / TỔNG QUAN"
-        title="Vận hành, trong tầm nhìn."
-        description="Danh mục, thiết bị và thông báo của hệ thống TokenLedger."
+        title="Tổng quan vận hành"
+        description="Thiết bị, dịch vụ và hoạt động quản trị của TokenLedger."
         action={
           <Refresh
             onClick={() => {
@@ -56,20 +72,8 @@ export function Overview({ navigate }: { navigate: (p: string) => void }) {
               </div>
               <ChartLineUp size={74} weight="thin" />
             </div>
-            <div className="stats-grid">
+            <div className="stats-grid three">
               {[
-                [
-                  Cube,
-                  "Model trong danh mục",
-                  s.counts.models,
-                  "Quản lý tại Danh mục",
-                ],
-                [
-                  ChartLineUp,
-                  "Phiên bản bảng giá",
-                  s.counts.prices,
-                  "Lịch sử giá được giữ lại",
-                ],
                 [
                   DeviceMobile,
                   "Thiết bị đăng ký",
@@ -77,18 +81,23 @@ export function Overview({ navigate }: { navigate: (p: string) => void }) {
                   "Đã đồng ý nhận thông báo",
                 ],
                 [
-                  BellSimple,
-                  "Lượt gửi thông báo",
-                  s.counts.jobs,
-                  "Gồm trạng thái gửi và lỗi",
+                  PlugsConnected,
+                  "Dịch vụ đã cấu hình",
+                  `${configured}/${services.length}`,
+                  "Chưa phải bằng chứng end-to-end",
+                ],
+                [
+                  ClipboardText,
+                  "Sự kiện nhật ký",
+                  s.counts.auditEvents,
+                  "Do backend ghi nhận",
                 ],
               ].map(([Icon, label, value, note]) => {
-                const I = Icon as typeof Cube;
+                const I = Icon as typeof Bug;
                 return (
                   <article className="stat" key={String(label)}>
                     <div className="stat-top">
                       <I size={22} />
-                      <ArrowUpRight size={17} />
                     </div>
                     <span>{String(label)}</span>
                     <strong>{String(value)}</strong>
@@ -99,55 +108,53 @@ export function Overview({ navigate }: { navigate: (p: string) => void }) {
             </div>
             <div className="two-column">
               <Section
-                title="Bắt đầu từ danh mục"
-                detail="Quản lý thông tin model và nguồn giá để user đối chiếu."
-              >
-                <div className="feature-illustration">
-                  <Cube size={46} weight="thin" />
-                  <div>
-                    <h3>
-                      {s.counts.models
-                        ? "Danh mục đang được quản lý"
-                        : "Chưa có model nào"}
-                    </h3>
-                    <p>
-                      {s.counts.models
-                        ? "Mỗi lần cập nhật đều có revision và nhật ký."
-                        : "Thêm model đầu tiên với provider và trạng thái thực tế."}
-                    </p>
-                  </div>
-                </div>
-                <InlineLink onClick={() => navigate("catalog")}>
-                  Mở danh mục model
-                </InlineLink>
-              </Section>
-              <Section
                 title="Kết nối dịch vụ"
                 detail="Trạng thái cấu hình, không thay bằng chứng end-to-end."
               >
                 <div className="service-list">
-                  {[
-                    ["Firebase", "firebase"],
-                    ["Firebase Cloud Messaging", "fcm"],
-                    ["Gemini API", "gemini"],
-                  ].map(([name, key]) => (
-                    <div className="service-line" key={key}>
-                      <span>
-                        <CheckCircle size={20} />
-                        {name}
-                      </span>
-                      <Badge
-                        tone={s.services[key]?.configured ? "green" : "amber"}
-                      >
-                        {s.services[key]?.configured
-                          ? "Đã cấu hình"
-                          : "Cần thiết lập"}
-                      </Badge>
-                    </div>
-                  ))}
+                  {services.map(([name, key]) => {
+                    const ready = s.services[key]?.configured;
+                    return (
+                      <div className="service-line" key={key}>
+                        <span>
+                          {ready ? (
+                            <CheckCircle size={20} />
+                          ) : (
+                            <WarningCircle size={20} className="warn" />
+                          )}
+                          {name}
+                        </span>
+                        <Badge tone={ready ? "green" : "amber"}>
+                          {ready ? "Đã cấu hình" : "Cần thiết lập"}
+                        </Badge>
+                      </div>
+                    );
+                  })}
                 </div>
                 <InlineLink onClick={() => navigate("system")}>
                   Xem chi tiết hệ thống
+                </InlineLink>
+              </Section>
+              <Section
+                title="Sự cố ứng dụng"
+                detail="Báo cáo chỉ đọc từ Firebase Crashlytics."
+              >
+                <div className="feature-illustration">
+                  <Bug size={46} weight="thin" />
+                  <div>
+                    <h3>
+                      {s.services.crashlytics?.configured
+                        ? "Đã kết nối báo cáo"
+                        : "Chưa kết nối báo cáo"}
+                    </h3>
+                    <p>
+                      {s.services.crashlytics?.reason ||
+                        "Xem nhóm lỗi, số sự kiện và thời điểm gần nhất."}
+                    </p>
+                  </div>
+                </div>
+                <InlineLink onClick={() => navigate("crashlytics")}>
+                  Mở báo cáo Crashlytics
                 </InlineLink>
               </Section>
             </div>
@@ -165,7 +172,7 @@ export function Overview({ navigate }: { navigate: (p: string) => void }) {
         ) : !audit.data?.events.length ? (
           <Empty
             title="Chưa có hoạt động quản trị"
-            detail="Khi bạn thêm model, bảng giá hoặc gửi thông báo, nhật ký sẽ xuất hiện tại đây."
+            detail="Khi có thao tác quản trị, nhật ký sẽ xuất hiện tại đây."
           />
         ) : (
           <div className="audit-list">
@@ -173,20 +180,10 @@ export function Overview({ navigate }: { navigate: (p: string) => void }) {
               <div className="audit-row" key={a.id}>
                 <Clock size={20} />
                 <div>
-                  <strong>
-                    {(
-                      {
-                        "model.create": "Thêm model",
-                        "model.update": "Cập nhật model",
-                        "price.create": "Tạo phiên bản giá",
-                        "notification.claim": "Bắt đầu gửi thông báo",
-                        "notification.complete": "Hoàn tất lượt gửi",
-                      } as Record<string, string>
-                    )[a.action] || a.action}
-                  </strong>
+                  <strong>{auditNames[a.action] || a.action}</strong>
                   <small>{a.target}</small>
+                  <time>{time(a.at)}</time>
                 </div>
-                <time>{time(a.at)}</time>
               </div>
             ))}
           </div>

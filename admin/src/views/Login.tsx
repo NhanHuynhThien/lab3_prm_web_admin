@@ -13,7 +13,16 @@ import { Brand, ErrorBox, Loading } from "../components/ui";
 export function Login() {
   const { user, session, error, refresh, loading } = useAuth();
   const [busy, setBusy] = useState(false),
-    [failure, setFailure] = useState("");
+    [failure, setFailure] = useState(""),
+    [copied, setCopied] = useState("");
+  async function copyUid(uid: string) {
+    try {
+      await navigator.clipboard.writeText(uid);
+      setCopied("Đã sao chép UID");
+    } catch {
+      setCopied("Chưa sao chép được, hãy chọn UID ở trên");
+    }
+  }
   async function signIn() {
     setBusy(true);
     setFailure("");
@@ -46,13 +55,13 @@ export function Login() {
             Một hệ thống rõ ràng.
           </h1>
           <p>
-            Quản lý model, bảng giá, thông báo; theo dõi crash và hệ thống.
-            Người dùng xem token của mình trên app mobile TokenLedger.
+            Theo dõi crash và trạng thái hệ thống. Người dùng xem token của mình
+            trên app mobile TokenLedger.
           </p>
           <div className="story-points">
             <span>
               <Database />
-              Danh mục có phiên bản
+              Nhật ký vận hành rõ ràng
             </span>
             <span>
               <Key />
@@ -98,11 +107,9 @@ export function Login() {
                       <code>{session.uid}</code>
                       <Button
                         className="text-button"
-                        onClick={() =>
-                          navigator.clipboard.writeText(session.uid)
-                        }
+                        onClick={() => void copyUid(session.uid)}
                       >
-                        Sao chép UID
+                        {copied || "Sao chép UID"}
                       </Button>
                     </div>
                   )}

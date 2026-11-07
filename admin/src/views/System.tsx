@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
+  ArrowSquareOut,
   CheckCircle,
   Cloud,
   Lightning,
@@ -25,9 +26,8 @@ export function System() {
   return (
     <>
       <PageHeading
-        eyebrow="WORKSPACE / HỆ THỐNG"
-        title="Biết rõ trạng thái hiện tại."
-        description="Cấu hình dịch vụ và giới hạn dữ liệu được thể hiện riêng."
+        title="Trạng thái hệ thống"
+        description="Cấu hình dịch vụ và giới hạn dữ liệu. Mở màn này không gọi dịch vụ hay tạo tác vụ."
         action={<Refresh onClick={state.refresh} busy={state.loading} />}
       />
       {state.error && <ErrorBox message={state.error} retry={state.refresh} />}{" "}
@@ -82,9 +82,6 @@ export function System() {
                         <Link href="/crashlytics">Mở báo cáo Crashlytics</Link>
                       </Button>
                     )}
-                    <small>
-                      Không gọi dịch vụ hoặc tạo tác vụ khi chỉ mở màn này.
-                    </small>
                   </section>
                 );
               })}
@@ -116,6 +113,16 @@ export function System() {
                     <dd>{time(s.checkedAt)}</dd>
                   </div>
                 </dl>
+                <Button className="button secondary console-action" asChild>
+                  <a
+                    href={`https://console.firebase.google.com/project/${s.project}/overview`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Mở Firebase Console
+                    <ArrowSquareOut size={18} />
+                  </a>
+                </Button>
               </Section>
               <Section
                 title="Database vận hành"
@@ -126,8 +133,8 @@ export function System() {
                   <div>
                     <h3>Supabase PostgreSQL</h3>
                     <p>
-                      Danh mục, phiên bản giá, nhật ký và lượt gửi được giữ qua
-                      lần khởi động lại backend.
+                      Dữ liệu vận hành và nhật ký được giữ qua lần khởi động lại
+                      backend.
                     </p>
                   </div>
                 </div>

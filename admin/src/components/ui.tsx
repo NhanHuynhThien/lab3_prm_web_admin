@@ -103,7 +103,7 @@ export function PageHeading({
   description,
   action,
 }: {
-  eyebrow: string;
+  eyebrow?: string;
   title: string;
   description: string;
   action?: ReactNode;
@@ -111,7 +111,7 @@ export function PageHeading({
   return (
     <header className="page-heading">
       <div>
-        <div className="eyebrow">{eyebrow}</div>
+        {eyebrow && <div className="eyebrow">{eyebrow}</div>}
         <h1>{title}</h1>
         <p>{description}</p>
       </div>
@@ -179,9 +179,14 @@ export function Refresh({
   busy?: boolean;
 }) {
   return (
-    <Button className="button secondary" onClick={onClick} disabled={busy}>
+    <Button
+      className="button secondary refresh-button"
+      onClick={onClick}
+      disabled={busy}
+      aria-label="Làm mới"
+    >
       <ArrowClockwise className={busy ? "spin" : ""} size={19} />
-      Làm mới
+      <span className="refresh-label">Làm mới</span>
     </Button>
   );
 }
