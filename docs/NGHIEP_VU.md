@@ -50,9 +50,9 @@ FCM accepted chưa chứng minh đã hiển thị hoặc đã đọc. Mobile c�
 - Token usage thiếu giữ `null`; `costEstimateMicros` và `billedCostMicros` hiện đều `null`. Latency không phải thời gian làm việc hay GPU time.
 - Có xử lý timeout, quota, model không khả dụng và lỗi dịch vụ. Hủy yêu cầu từ mobile và chính sách retention cần nghiệm thu/bổ sung.
 
-## Tổng quan, hệ thống và Crashlytics
+## Tổng quan và Crashlytics
 
-Tổng quan hiển thị số thiết bị, số dịch vụ đã cấu hình và audit từ database. Màn hệ thống biểu diễn cấu hình; `configured` không đảm bảo kết nối đã được xác minh.
+Tổng quan hiển thị số thiết bị, số dịch vụ đã cấu hình và audit từ database. Trạng thái dịch vụ và thông tin dự án nằm ngay trong Tổng quan (trang Hệ thống cũ chuyển hướng về đây); `configured` không đảm bảo kết nối đã được xác minh.
 
 Code hiện có màn Crashlytics và backend reader gọi Reports API `v1alpha`. Reader chọn kỳ 7 hoặc 30 ngày, cache 60 giây và chỉ lấy 25 nhóm đầu. Khi còn trang sau, các tổng trên UI chỉ áp dụng dữ liệu đã tải.
 

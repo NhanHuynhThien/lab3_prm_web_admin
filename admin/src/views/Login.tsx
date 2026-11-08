@@ -1,12 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import {
-  ArrowRight,
-  Database,
-  Key,
-  LockSimple,
-  SignOut,
-} from "@phosphor-icons/react";
+import { ArrowRight, LockSimple, SignOut } from "@phosphor-icons/react";
 import { login, logout } from "../firebase";
 import { useAuth } from "../auth";
 import { Brand, ErrorBox, Loading } from "../components/ui";
@@ -32,7 +26,7 @@ export function Login() {
       const code = (e as { code?: string }).code;
       setFailure(
         code === "auth/unauthorized-domain"
-          ? "Hostname chưa được Firebase cho phép. Mở http://localhost:5173 để đăng nhập local."
+          ? `Tên miền ${window.location.hostname} chưa có trong Authorized domains của Firebase Authentication.`
           : code === "auth/popup-blocked"
             ? "Trình duyệt đang chặn popup Google. Cho phép popup rồi thử lại."
             : code === "auth/popup-closed-by-user"
@@ -48,28 +42,17 @@ export function Login() {
       <section className="login-story">
         <Brand />
         <div className="login-intro">
-          <div className="eyebrow">WEB QUẢN TRỊ · CHỈ DÀNH CHO ADMIN</div>
+          <div className="eyebrow">WEB QUẢN TRỊ</div>
           <h1>
             Mọi công cụ.
             <br />
             Một hệ thống rõ ràng.
           </h1>
           <p>
-            Theo dõi crash và trạng thái hệ thống. Người dùng xem token của mình
-            trên app mobile TokenLedger.
+            Theo dõi dịch vụ, nhật ký vận hành và báo cáo crash. Người dùng xem
+            token của mình trên app mobile TokenLedger.
           </p>
-          <div className="story-points">
-            <span>
-              <Database />
-              Nhật ký vận hành rõ ràng
-            </span>
-            <span>
-              <Key />
-              Quyền quản trị được xác minh
-            </span>
-          </div>
         </div>
-        <p className="story-footer">TokenLedger · AI usage, understood.</p>
       </section>
       <section className="login-form-area">
         <div className="login-card">
@@ -140,8 +123,7 @@ export function Login() {
           )}
           <div className="login-footnote">
             <LockSimple size={16} />
-            Chỉ dành cho tài khoản được cấp quyền. Admin không truy cập chat
-            hoặc lịch sử token riêng của user.
+            Admin không truy cập chat hoặc lịch sử token riêng của user.
           </div>
         </div>
       </section>

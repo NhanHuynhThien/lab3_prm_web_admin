@@ -4,7 +4,7 @@ Cập nhật: 04/11/2026. `[x]` có source hoặc kết quả kiểm tra tương
 
 ## Đã có trong source
 
-- [x] Web Next.js/shadcn/ui: login, tổng quan, hệ thống và Crashlytics; điều hướng dưới màn hình trên điện thoại. Model/giá và thông báo chỉ còn ở API.
+- [x] Web Next.js/shadcn/ui: login, tổng quan (gồm trạng thái dịch vụ, `/system` chuyển hướng về `/`) và Crashlytics; điều hướng dưới màn hình trên điện thoại. Model/giá và thông báo chỉ còn ở API.
 - [x] Firebase verified identity; kiểm quyền admin và owner ở API.
 - [x] Supabase migration: 7 bảng bật RLS, 6 RPC, client không có quyền bảng/RPC.
 - [x] Model revision và bảng giá theo phiên bản, audit, xử lý conflict.

@@ -33,12 +33,13 @@ export function Brand() {
     </div>
   );
 }
+export type BadgeTone = "green" | "amber" | "orange" | "red" | "neutral";
 export function Badge({
   children,
   tone = "neutral",
 }: {
   children: ReactNode;
-  tone?: "green" | "amber" | "neutral";
+  tone?: BadgeTone;
 }) {
   return (
     <ShadcnBadge variant="outline" className={`badge ${tone}`}>

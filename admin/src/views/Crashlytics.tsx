@@ -1,9 +1,5 @@
 import { useState } from "react";
-import {
-  ArrowSquareOut,
-  ShieldCheck,
-  WarningCircle,
-} from "@phosphor-icons/react";
+import { ArrowSquareOut, WarningCircle } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import {
   NativeSelect,
@@ -26,8 +22,11 @@ import {
   Loading,
   Refresh,
   useResource,
+  type BadgeTone,
 } from "../components/ui";
 import { time } from "../types";
+import { useAuth } from "../auth";
+import { firebaseConsole } from "../lib/console";
 type Row = {
   id: string;
   title: string;
@@ -53,22 +52,33 @@ type Data = {
   source?: string;
   consoleUrl?: string;
 };
-const consoleUrl =
-  "https://console.firebase.google.com/project/tokenledger-nhan-20261021/crashlytics/app/android:com.tokenledger.token_ledger/issues";
 const value = (n: number | null) =>
   n === null ? "—" : new Intl.NumberFormat("vi-VN").format(n);
-const kinds: Record<string, string> = {
-  FATAL: "Crash",
-  NON_FATAL: "Lỗi có xử lý",
-  ANR: "Không phản hồi",
-  OTHER: "Nhóm thống kê",
+
+/** Issue types from the Reports API; unknown types keep their raw name. */
+const kinds: Record<string, { label: string; tone: BadgeTone }> = {
+  FATAL: { label: "Crash", tone: "red" },
+  NON_FATAL: { label: "Lỗi có xử lý", tone: "amber" },
+  ANR: { label: "Không phản hồi", tone: "orange" },
+  OTHER: { label: "Nhóm thống kê", tone: "neutral" },
 };
+const kind = (type: string) =>
+  Object.hasOwn(kinds, type)
+    ? kinds[type]
+    : { label: type, tone: "neutral" as const };
+const openExternal = (url: string) =>
+  window.open(url, "_blank", "noopener,noreferrer");
+
 export function Crashlytics() {
   const [days, setDays] = useState("7"),
     [report, setReport] = useState("");
   const query = new URLSearchParams({ days, ...(report ? { report } : {}) });
   const state = useResource<Data>(`/v1/admin/crashlytics?${query}`),
     data = state.data;
+  const { session } = useAuth();
+  const consoleUrl =
+    data?.consoleUrl ??
+    (session ? firebaseConsole(session.project, "crashlytics") : undefined);
   const rows = data?.rows ?? [];
   const events =
     rows.length && rows.every((r) => r.events !== null)
@@ -100,12 +110,14 @@ export function Crashlytics() {
             30 ngày
           </Button>
         </div>
-        <Button className="button secondary" asChild>
-          <a href={consoleUrl} target="_blank" rel="noopener noreferrer">
-            Firebase Console
-            <ArrowSquareOut size={18} />
-          </a>
-        </Button>
+        {consoleUrl && (
+          <Button className="button secondary" asChild>
+            <a href={consoleUrl} target="_blank" rel="noopener noreferrer">
+              Firebase Console
+              <ArrowSquareOut size={18} />
+            </a>
+          </Button>
+        )}
       </div>
       {state.error && <ErrorBox message={state.error} retry={state.refresh} />}
       {!data && state.loading ? (
@@ -121,44 +133,29 @@ export function Crashlytics() {
               data.reason ?? "Cần cấu hình identity chỉ đọc, không bật billing."
             }
           />
-          <div className="notice">
-            <ShieldCheck size={24} />
-            <p>
-              Không mở quyền Firestore/Auth hoặc dùng dữ liệu mẫu để điền
-              dashboard. Không trả user ID, nội dung lỗi riêng, custom logs hay
-              ledger ra web.
-            </p>
-          </div>
         </Section>
       ) : (
         data && (
           <>
-            <div className="stats-grid">
+            <div className="stats-grid two">
               <article className="stat">
-                <span>Nhóm trên trang</span>
+                <span>Nhóm lỗi</span>
                 <strong>{rows.length}</strong>
-                <small>Tối đa 25 nhóm mỗi lượt</small>
+                <small>
+                  {data.totalGroups === null
+                    ? "Firebase chưa trả tổng số nhóm"
+                    : `Trên tổng ${value(data.totalGroups)} nhóm của báo cáo`}
+                </small>
               </article>
               <article className="stat">
-                <span>Nhóm toàn báo cáo</span>
-                <strong>{value(data.totalGroups)}</strong>
-                <small>Tổng do Firebase cung cấp</small>
-              </article>
-              <article className="stat">
-                <span>Sự kiện trên trang</span>
+                <span>Sự kiện</span>
                 <strong>{value(events)}</strong>
-                <small>Không thay tổng toàn hệ thống</small>
-              </article>
-              <article className="stat">
-                <span>Nguồn báo cáo</span>
-                <strong className="stat-text">Firebase</strong>
-                <small>Số liệu quan sát, không ngoại suy</small>
+                <small>Tính trên các nhóm đang hiển thị</small>
               </article>
             </div>
             <Section
               title="Chi tiết báo cáo"
               detail="Chỉ số thực theo nhóm và khoảng thời gian đã chọn."
-              action={<Badge tone="green">Chỉ đọc</Badge>}
             >
               {!!data.reports.length && (
                 <label className="field-gap">
@@ -192,26 +189,43 @@ export function Crashlytics() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {rows.map((r) => (
-                      <TableRow key={r.id}>
-                        <TableCell className="cell-title">
-                          <strong>{r.title}</strong>
-                          <small>{kinds[r.type] ?? r.type}</small>
-                        </TableCell>
-                        <TableCell data-label="Sự kiện">
-                          {value(r.events)}
-                        </TableCell>
-                        <TableCell data-label="User ảnh hưởng">
-                          {value(r.users)}
-                        </TableCell>
-                        <TableCell data-label="Phiên ảnh hưởng">
-                          {value(r.sessions)}
-                        </TableCell>
-                        <TableCell data-label="Gần nhất">
-                          {r.lastSeen ? time(r.lastSeen) : "—"}
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {rows.map((r) => {
+                      const k = kind(r.type);
+                      return (
+                        <TableRow
+                          key={r.id}
+                          className="clickable-row"
+                          onClick={(e) => {
+                            // The title link handles its own clicks and keys.
+                            if (!(e.target as Element).closest("a"))
+                              openExternal(r.url);
+                          }}
+                        >
+                          <TableCell className="cell-title">
+                            <a
+                              href={r.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              {r.title}
+                            </a>
+                            <Badge tone={k.tone}>{k.label}</Badge>
+                          </TableCell>
+                          <TableCell data-label="Sự kiện">
+                            {value(r.events)}
+                          </TableCell>
+                          <TableCell data-label="User ảnh hưởng">
+                            {value(r.users)}
+                          </TableCell>
+                          <TableCell data-label="Phiên ảnh hưởng">
+                            {value(r.sessions)}
+                          </TableCell>
+                          <TableCell data-label="Gần nhất">
+                            {r.lastSeen ? time(r.lastSeen) : "—"}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               )}
@@ -219,23 +233,22 @@ export function Crashlytics() {
                 <div className="notice">
                   <WarningCircle size={24} />
                   <p>
-                    Còn nhóm ở các trang sau. Màn này hiển thị 25 nhóm đầu; mở
-                    Firebase Console để xem toàn bộ. Các tổng trên chỉ áp dụng
-                    trang đang tải.
+                    Chỉ hiển thị trang đầu; các tổng chỉ tính trên trang này.
                   </p>
                 </div>
               )}
             </Section>
-            <div className="notice">
-              <ShieldCheck size={24} />
-              <p>
-                {data.source} ·{" "}
-                {data.start ? `${time(data.start)} → ${time(data.end!)}` : ""}.
-                Đọc lúc {time(data.checkedAt)}; cache tối đa 60 giây. Số user
-                ảnh hưởng được hiển thị theo từng nhóm, không cộng trùng giữa
-                issue.
-              </p>
-            </div>
+            <p className="table-meta">
+              {[
+                data.source,
+                data.start && data.end
+                  ? `${time(data.start)} → ${time(data.end)}`
+                  : null,
+                `Đọc lúc ${time(data.checkedAt)}`,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
           </>
         )
       )}

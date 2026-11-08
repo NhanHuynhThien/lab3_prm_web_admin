@@ -4,38 +4,39 @@ import { usePathname, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import {
   SquaresFour,
-  SlidersHorizontal,
   SignOut,
   ArrowSquareOut,
-  ShieldCheck,
   Bug,
+  type Icon,
 } from "@phosphor-icons/react";
 import { useAuth } from "./auth";
 import { logout } from "./firebase";
 import { Brand } from "./components/ui";
 import { Login } from "./views/Login";
-import type { Section } from "./sections";
+import { firebaseConsole } from "./lib/console";
+import { sectionPath, sections, type Section } from "./sections";
 // Views load on demand so the login screen ships without them.
 const Overview = dynamic(() =>
   import("./views/Overview").then((m) => m.Overview),
 );
-const System = dynamic(() => import("./views/System").then((m) => m.System));
 const Crashlytics = dynamic(() =>
   import("./views/Crashlytics").then((m) => m.Crashlytics),
 );
-const nav: { id: Section; name: string; icon: typeof Bug }[] = [
-  { id: "overview", name: "Tổng quan", icon: SquaresFour },
-  { id: "crashlytics", name: "Crashlytics", icon: Bug },
-  { id: "system", name: "Hệ thống", icon: SlidersHorizontal },
-];
+// Keyed by section so adding a page without a nav entry fails type checking.
+const navItems: Record<Section, { name: string; icon: Icon }> = {
+  overview: { name: "Tổng quan", icon: SquaresFour },
+  crashlytics: { name: "Crashlytics", icon: Bug },
+};
+const nav = sections.map((id) => ({ id, ...navItems[id] }));
 export default function App() {
   const { user, session, loading } = useAuth();
   const pathname = usePathname(),
     router = useRouter();
   const value = pathname.split("/")[1];
-  const page = nav.some((n) => n.id === value) ? value : "overview";
-  function navigate(id: string) {
-    router.push(id === "overview" ? "/" : `/${id}`);
+  const page =
+    nav.find((n) => n.id === value)?.id ?? ("overview" satisfies Section);
+  function navigate(id: Section) {
+    router.push(sectionPath(id));
   }
   if (loading || !user || !session?.admin) return <Login />;
   const items = nav.map((n) => (
@@ -56,18 +57,9 @@ export default function App() {
       </a>
       <aside className="sidebar">
         <Brand />
-        <div className="workspace-label">
-          <span className="status-dot" />
-          ADMIN · CHỈ DỮ LIỆU VẬN HÀNH
-        </div>
         <nav aria-label="Điều hướng quản trị">{items}</nav>
-        <div className="sidebar-note">
-          <ShieldCheck size={24} />
-          <strong>Web dành cho admin</strong>
-          <p>Token và sổ cá nhân của user chỉ xem trên app mobile.</p>
-        </div>
         <a
-          href="https://console.firebase.google.com/project/tokenledger-nhan-20261021/overview"
+          href={firebaseConsole(session.project)}
           target="_blank"
           rel="noopener noreferrer"
           className="console-link"
@@ -79,11 +71,6 @@ export default function App() {
       <div className="workspace-body">
         <header className="topbar">
           <img className="topbar-logo" src="/tokenledger.svg" alt="" />
-          <div className="breadcrumb">
-            <span className="breadcrumb-root">Không gian quản trị</span>
-            <span className="breadcrumb-divider">/</span>
-            <strong>{nav.find((n) => n.id === page)?.name}</strong>
-          </div>
           <div className="user-menu">
             <div className="avatar" aria-hidden="true">
               {(user.displayName || user.email || "A").charAt(0)}
@@ -108,15 +95,9 @@ export default function App() {
         >
           {page === "overview" ? (
             <Overview navigate={navigate} />
-          ) : page === "crashlytics" ? (
-            <Crashlytics />
           ) : (
-            <System />
+            <Crashlytics />
           )}
-          <footer className="page-footer">
-            <span>TokenLedger Admin</span>
-            <span>Dữ liệu thực · nguồn và trạng thái rõ ràng</span>
-          </footer>
         </main>
       </div>
       <nav className="bottom-nav" aria-label="Điều hướng chính">

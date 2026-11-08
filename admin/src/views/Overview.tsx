@@ -1,15 +1,23 @@
 import {
+  ArrowSquareOut,
   Bug,
-  ChartLineUp,
   CheckCircle,
   ClipboardText,
-  Clock,
+  Cloud,
+  Cube,
+  CurrencyCircleDollar,
   DeviceMobile,
+  PaperPlaneTilt,
   PlugsConnected,
+  Sparkle,
   WarningCircle,
+  type Icon,
 } from "@phosphor-icons/react";
+import { Button } from "@/components/ui/button";
 import type { Status, Audit } from "../types";
 import { time } from "../types";
+import { firebaseConsole } from "../lib/console";
+import type { Section as Page } from "../sections";
 import {
   useResource,
   PageHeading,
@@ -21,31 +29,75 @@ import {
   Refresh,
   InlineLink,
 } from "../components/ui";
-const services = [
-  ["Firebase", "firebase"],
-  ["Firebase Cloud Messaging", "fcm"],
-  ["Gemini API", "gemini"],
-  ["Crashlytics", "crashlytics"],
+
+/** Services reported by `/v1/admin/status`, in display order. */
+const services: {
+  key: string;
+  name: string;
+  icon: Icon;
+  detail: (s: Status) => string;
+}[] = [
+  {
+    key: "firebase",
+    name: "Firebase Authentication",
+    icon: Cloud,
+    detail: () => "Xác minh ID token Google ở backend.",
+  },
+  {
+    key: "fcm",
+    name: "Firebase Cloud Messaging",
+    icon: PaperPlaneTilt,
+    detail: () => "Gửi thông báo đẩy tới thiết bị đã đăng ký.",
+  },
+  {
+    key: "gemini",
+    name: "Gemini API",
+    icon: Sparkle,
+    detail: (s) =>
+      s.services.gemini?.model
+        ? `Model ${s.services.gemini.model}.`
+        : "Phân tích khi người dùng yêu cầu.",
+  },
+  {
+    key: "crashlytics",
+    name: "Crashlytics",
+    icon: Bug,
+    detail: (s) => s.services.crashlytics?.reason ?? "Báo cáo lỗi chỉ đọc.",
+  },
 ];
-const auditNames: Record<string, string> = {
-  "model.create": "Thêm model",
-  "model.update": "Cập nhật model",
-  "price.create": "Tạo phiên bản giá",
-  "notification.claim": "Bắt đầu gửi thông báo",
-  "notification.complete": "Hoàn tất lượt gửi",
+
+/** Every action the backend writes to `tl_audit`; unknown ones fall back. */
+const auditKinds: Record<string, { label: string; icon: Icon }> = {
+  "model.create": { label: "Thêm model", icon: Cube },
+  "model.update": { label: "Cập nhật model", icon: Cube },
+  "price.create": { label: "Tạo phiên bản giá", icon: CurrencyCircleDollar },
+  "notification.claim": {
+    label: "Bắt đầu gửi thông báo",
+    icon: PaperPlaneTilt,
+  },
+  "notification.complete": { label: "Hoàn tất lượt gửi", icon: CheckCircle },
+  "request.error": { label: "Lỗi máy chủ", icon: WarningCircle },
 };
-export function Overview({ navigate }: { navigate: (p: string) => void }) {
+const auditKind = (action: string) =>
+  Object.hasOwn(auditKinds, action)
+    ? auditKinds[action]
+    : { label: action, icon: ClipboardText };
+
+/** Rows shown here; the API returns up to 100. */
+const recentAuditCount = 6;
+
+export function Overview({ navigate }: { navigate: (p: Page) => void }) {
   const state = useResource<Status>("/v1/admin/status");
   const audit = useResource<{ events: Audit[] }>("/v1/admin/audit");
   const s = state.data;
   const configured = s
-    ? services.filter(([, key]) => s.services[key]?.configured).length
+    ? services.filter(({ key }) => s.services[key]?.configured).length
     : 0;
   return (
     <>
       <PageHeading
         title="Tổng quan vận hành"
-        description="Thiết bị, dịch vụ và hoạt động quản trị của TokenLedger."
+        description="Thiết bị, dịch vụ và nhật ký của TokenLedger."
         action={
           <Refresh
             onClick={() => {
@@ -56,73 +108,56 @@ export function Overview({ navigate }: { navigate: (p: string) => void }) {
           />
         }
       />
-      {state.error && <ErrorBox message={state.error} retry={state.refresh} />}{" "}
+      {state.error && <ErrorBox message={state.error} retry={state.refresh} />}
       {!s && state.loading ? (
         <Loading />
       ) : (
         s && (
           <>
-            <div className="overview-banner">
-              <div>
-                <Badge tone="green">Môi trường local</Badge>
-                <h2>Workspace đã kết nối</h2>
-                <p>
-                  {s.project} · Dữ liệu vận hành lưu trong Supabase PostgreSQL.
-                </p>
-              </div>
-              <ChartLineUp size={74} weight="thin" />
-            </div>
             <div className="stats-grid three">
               {[
-                [
-                  DeviceMobile,
-                  "Thiết bị đăng ký",
-                  s.counts.devices,
-                  "Đã đồng ý nhận thông báo",
-                ],
-                [
-                  PlugsConnected,
-                  "Dịch vụ đã cấu hình",
-                  `${configured}/${services.length}`,
-                  "Chưa phải bằng chứng end-to-end",
-                ],
-                [
-                  ClipboardText,
-                  "Sự kiện nhật ký",
-                  s.counts.auditEvents,
-                  "Do backend ghi nhận",
-                ],
-              ].map(([Icon, label, value, note]) => {
-                const I = Icon as typeof Bug;
-                return (
-                  <article className="stat" key={String(label)}>
-                    <div className="stat-top">
-                      <I size={22} />
-                    </div>
-                    <span>{String(label)}</span>
-                    <strong>{String(value)}</strong>
-                    <small>{String(note)}</small>
-                  </article>
-                );
-              })}
+                {
+                  icon: DeviceMobile,
+                  label: "Thiết bị đăng ký",
+                  value: s.counts.devices,
+                  note: "Đã đồng ý nhận thông báo",
+                },
+                {
+                  icon: PlugsConnected,
+                  label: "Dịch vụ đã cấu hình",
+                  value: `${configured}/${services.length}`,
+                  note: "Cấu hình, chưa phải kiểm thử end-to-end",
+                },
+                {
+                  icon: ClipboardText,
+                  label: "Sự kiện nhật ký",
+                  value: s.counts.auditEvents,
+                  note: "Do backend ghi nhận",
+                },
+              ].map(({ icon: I, label, value, note }) => (
+                <article className="stat" key={label}>
+                  <span className="stat-icon">
+                    <I size={22} />
+                  </span>
+                  <span>{label}</span>
+                  <strong>{value}</strong>
+                  <small>{note}</small>
+                </article>
+              ))}
             </div>
             <div className="two-column">
-              <Section
-                title="Kết nối dịch vụ"
-                detail="Trạng thái cấu hình, không thay bằng chứng end-to-end."
-              >
+              <Section title="Dịch vụ">
                 <div className="service-list">
-                  {services.map(([name, key]) => {
+                  {services.map(({ key, name, icon: I, detail }) => {
                     const ready = s.services[key]?.configured;
                     return (
                       <div className="service-line" key={key}>
                         <span>
-                          {ready ? (
-                            <CheckCircle size={20} />
-                          ) : (
-                            <WarningCircle size={20} className="warn" />
-                          )}
-                          {name}
+                          <I size={20} className={ready ? "" : "warn"} />
+                          <span>
+                            {name}
+                            <small>{detail(s)}</small>
+                          </span>
                         </span>
                         <Badge tone={ready ? "green" : "amber"}>
                           {ready ? "Đã cấu hình" : "Cần thiết lập"}
@@ -131,61 +166,71 @@ export function Overview({ navigate }: { navigate: (p: string) => void }) {
                     );
                   })}
                 </div>
-                <InlineLink onClick={() => navigate("system")}>
-                  Xem chi tiết hệ thống
-                </InlineLink>
-              </Section>
-              <Section
-                title="Sự cố ứng dụng"
-                detail="Báo cáo chỉ đọc từ Firebase Crashlytics."
-              >
-                <div className="feature-illustration">
-                  <Bug size={46} weight="thin" />
-                  <div>
-                    <h3>
-                      {s.services.crashlytics?.configured
-                        ? "Đã kết nối báo cáo"
-                        : "Chưa kết nối báo cáo"}
-                    </h3>
-                    <p>
-                      {s.services.crashlytics?.reason ||
-                        "Xem nhóm lỗi, số sự kiện và thời điểm gần nhất."}
-                    </p>
-                  </div>
-                </div>
                 <InlineLink onClick={() => navigate("crashlytics")}>
                   Mở báo cáo Crashlytics
                 </InlineLink>
+              </Section>
+              <Section title="Dự án">
+                <dl className="facts">
+                  <div>
+                    <dt>Project</dt>
+                    <dd>{s.project}</dd>
+                  </div>
+                  <div>
+                    <dt>Môi trường</dt>
+                    <dd>{s.mode}</dd>
+                  </div>
+                  <div>
+                    <dt>Database</dt>
+                    <dd>{s.database}</dd>
+                  </div>
+                  <div>
+                    <dt>Lần kiểm cấu hình</dt>
+                    <dd>{time(s.checkedAt)}</dd>
+                  </div>
+                </dl>
+                <Button className="button secondary console-action" asChild>
+                  <a
+                    href={firebaseConsole(s.project)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Mở Firebase Console
+                    <ArrowSquareOut size={18} />
+                  </a>
+                </Button>
               </Section>
             </div>
           </>
         )
       )}
-      <Section
-        title="Nhật ký gần đây"
-        detail="Các thao tác quản trị được ghi nhận từ backend."
-      >
+      <Section title="Nhật ký gần đây">
         {audit.error ? (
           <ErrorBox message={audit.error} retry={audit.refresh} />
         ) : audit.loading && !audit.data ? (
           <Loading />
         ) : !audit.data?.events.length ? (
           <Empty
-            title="Chưa có hoạt động quản trị"
-            detail="Khi có thao tác quản trị, nhật ký sẽ xuất hiện tại đây."
+            title="Chưa có sự kiện"
+            detail="Lỗi máy chủ và thao tác quản trị qua API sẽ xuất hiện tại đây."
           />
         ) : (
           <div className="audit-list">
-            {audit.data.events.slice(0, 6).map((a) => (
-              <div className="audit-row" key={a.id}>
-                <Clock size={20} />
-                <div>
-                  <strong>{auditNames[a.action] || a.action}</strong>
-                  <small>{a.target}</small>
-                  <time>{time(a.at)}</time>
+            {audit.data.events.slice(0, recentAuditCount).map((a) => {
+              const { label, icon: I } = auditKind(a.action);
+              return (
+                <div className="audit-row" key={a.id}>
+                  <span className="audit-icon">
+                    <I size={18} />
+                  </span>
+                  <div>
+                    <strong>{label}</strong>
+                    <small>{a.target}</small>
+                    <time>{time(a.at)}</time>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </Section>
