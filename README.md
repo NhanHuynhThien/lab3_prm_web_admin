@@ -28,7 +28,7 @@ npm run check
 npm run dev
 ```
 
-Web: [http://127.0.0.1:5173](http://127.0.0.1:5173). API: [http://127.0.0.1:8788/health](http://127.0.0.1:8788/health). `npm run dev` khởi chạy cả hai; Next.js dùng Webpack.
+Web: [http://localhost:5173](http://localhost:5173) (Firebase Auth mặc định chỉ cho phép `localhost`, không cho `127.0.0.1`). API: [http://127.0.0.1:8788/health](http://127.0.0.1:8788/health). `npm run dev` khởi chạy cả hai; Next.js dùng Webpack.
 
 ### Cấu hình web — admin/.env
 
